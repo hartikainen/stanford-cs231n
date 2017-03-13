@@ -1,7 +1,7 @@
 import numpy as np
 from random import shuffle
 
-def svm_loss_naive(W, X, y, reg):
+def svm_loss_naive(W, X, y, reg, delta=1.0):
   """
   Structured SVM loss function, naive implementation (with loops).
 
@@ -32,7 +32,7 @@ def svm_loss_naive(W, X, y, reg):
     for j in xrange(num_classes):
       if j == y[i]:
         continue
-      margin = scores[j] - correct_class_score + 1 # note delta = 1
+      margin = scores[j] - correct_class_score + delta
       if margin > 0:
         loss += margin
         dW[:,j]    += X[i]
@@ -60,7 +60,7 @@ def svm_loss_naive(W, X, y, reg):
   return loss, dW
 
 
-def svm_loss_vectorized(W, X, y, reg):
+def svm_loss_vectorized(W, X, y, reg, delta=1.0):
   """
   Structured SVM loss function, vectorized implementation.
 
@@ -68,13 +68,32 @@ def svm_loss_vectorized(W, X, y, reg):
   """
   loss = 0.0
   dW = np.zeros(W.shape) # initialize the gradient as zero
+  num_train = X.shape[0]
 
   #############################################################################
   # TODO:                                                                     #
   # Implement a vectorized version of the structured SVM loss, storing the    #
   # result in loss.                                                           #
   #############################################################################
-  pass
+  scores = np.dot(X, W)
+  correct_class_scores = np.choose(y, scores.T).reshape(-1, 1)
+
+  hinge_difference = scores - correct_class_scores + delta
+  # We currently have num_train * delta error in our matrix, since we should
+  # not add delta to the correct class indices. We'll compensate for this below
+  # after adding the regularization to the loss.
+  hinge_difference[hinge_difference < 0.0] = 0.0
+
+  # Right now the loss is a matrix of all training examples. We want it to be
+  # scalar average instead, so we sum and we divide by num_train.
+  loss = np.sum(hinge_difference) / num_train
+
+  # Add L2 regularization to the loss.
+  loss += 0.5 * reg * np.sum(W * W)
+
+  # Subtract delta from the loss to compensate the error we made above
+  loss -= delta
+
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
