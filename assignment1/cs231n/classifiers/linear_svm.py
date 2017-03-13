@@ -27,16 +27,17 @@ def svm_loss_naive(W, X, y, reg, delta=1.0):
   loss = 0.0
 
   for i in xrange(num_train):
+    y_ = y[i]
     scores = X[i].dot(W)
-    correct_class_score = scores[y[i]]
+    correct_class_score = scores[y_]
     for j in xrange(num_classes):
-      if j == y[i]:
+      if j == y_:
         continue
       margin = scores[j] - correct_class_score + delta
       if margin > 0:
         loss += margin
-        dW[:,j]    += X[i]
-        dW[:,y[i]] -= X[i]
+        dW[:,j]  += X[i]
+        dW[:,y_] -= X[i]
 
   # Right now the loss is a sum over all training examples, but we want it
   # to be an average instead so we divide by num_train.
@@ -78,21 +79,18 @@ def svm_loss_vectorized(W, X, y, reg, delta=1.0):
   scores = np.dot(X, W)
   correct_class_scores = np.choose(y, scores.T).reshape(-1, 1)
 
-  hinge_difference = scores - correct_class_scores + delta
+  hinge_difference = np.maximum(scores - correct_class_scores + delta, 0.0)
   # We currently have num_train * delta error in our matrix, since we should
-  # not add delta to the correct class indices. We'll compensate for this below
-  # after adding the regularization to the loss.
-  hinge_difference[hinge_difference < 0.0] = 0.0
+  # not add delta to the correct class indices. For all i=[0..num_train],
+  # j=y[i] set hinge_difference[i,j] = 0.0.
+  hinge_difference[np.arange(num_train), y] = 0.0
 
   # Right now the loss is a matrix of all training examples. We want it to be
   # scalar average instead, so we sum and we divide by num_train.
-  loss = np.sum(hinge_difference) / num_train
+  loss = np.sum(hinge_difference) / float(num_train)
 
   # Add L2 regularization to the loss.
   loss += 0.5 * reg * np.sum(W * W)
-
-  # Subtract delta from the loss to compensate the error we made above
-  loss -= delta
 
   #############################################################################
   #                             END OF YOUR CODE                              #
@@ -108,7 +106,12 @@ def svm_loss_vectorized(W, X, y, reg, delta=1.0):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
-  pass
+  grad_mask = (hinge_difference > 0).astype(int)
+  grad_mask[np.arange(y.shape[0]), y] = - np.sum(grad_mask, axis=1)
+  dW = np.dot(X.T, grad_mask)
+
+  dW /= float(num_train)
+  dW += reg * W
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
