@@ -79,15 +79,15 @@ def svm_loss_vectorized(W, X, y, reg, delta=1.0):
   scores = np.dot(X, W)
   correct_class_scores = np.choose(y, scores.T).reshape(-1, 1)
 
-  hinge_difference = np.maximum(scores - correct_class_scores + delta, 0.0)
+  margins = np.maximum(scores - correct_class_scores + delta, 0.0)
   # We currently have num_train * delta error in our matrix, since we should
   # not add delta to the correct class indices. For all i=[0..num_train],
-  # j=y[i] set hinge_difference[i,j] = 0.0.
-  hinge_difference[np.arange(num_train), y] = 0.0
+  # j=y[i] set margins[i,j] = 0.0.
+  margins[np.arange(num_train), y] = 0.0
 
   # Right now the loss is a matrix of all training examples. We want it to be
   # scalar average instead, so we sum and we divide by num_train.
-  loss = np.sum(hinge_difference) / float(num_train)
+  loss = np.sum(margins) / float(num_train)
 
   # Add L2 regularization to the loss.
   loss += 0.5 * reg * np.sum(W * W)
@@ -106,7 +106,7 @@ def svm_loss_vectorized(W, X, y, reg, delta=1.0):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
-  grad_mask = (hinge_difference > 0).astype(int)
+  grad_mask = (margins > 0).astype(int)
   grad_mask[np.arange(y.shape[0]), y] = - np.sum(grad_mask, axis=1)
   dW = np.dot(X.T, grad_mask)
 

@@ -74,7 +74,9 @@ class TwoLayerNet(object):
     # Store the result in the scores variable, which should be an array of      #
     # shape (N, C).                                                             #
     #############################################################################
-    pass
+    z = np.dot(X, W1) + b1
+    h = np.maximum(z, 0, z) # third argument makes ReLU operate in place
+    scores = np.dot(h, W2) + b2
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -92,7 +94,16 @@ class TwoLayerNet(object):
     # classifier loss. So that your results match ours, multiply the            #
     # regularization loss by 0.5                                                #
     #############################################################################
-    pass
+
+    exp_scores = np.exp(scores) # (N, C)
+    correct_exp_scores = np.choose(y, exp_scores.T) # (N, 1)
+    sum_exp_scores = np.sum(exp_scores, axis=1) # (N, 1)
+
+    PYgX = correct_exp_scores / sum_exp_scores
+    loss = np.sum(-np.log(PYgX))
+
+    loss /= float(N)
+    loss += 0.5 * reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
