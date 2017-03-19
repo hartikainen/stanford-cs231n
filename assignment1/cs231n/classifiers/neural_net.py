@@ -75,12 +75,12 @@ class TwoLayerNet(object):
     # shape (N, C).                                                             #
     #############################################################################
     z = np.dot(X, W1) + b1
-    h = np.maximum(z, 0, z) # third argument makes ReLU operate in place
-    scores = np.dot(h, W2) + b2
+    h1 = np.maximum(z, 0, z) # third argument makes ReLU operate in place
+    scores = np.dot(h1, W2) + b2
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
-    
+
     # If the targets are not given then jump out, we're done
     if y is None:
       return scores
@@ -96,12 +96,11 @@ class TwoLayerNet(object):
     #############################################################################
 
     exp_scores = np.exp(scores) # (N, C)
-    correct_exp_scores = np.choose(y, exp_scores.T) # (N, 1)
-    sum_exp_scores = np.sum(exp_scores, axis=1) # (N, 1)
+    sum_exp_scores = np.sum(exp_scores, axis=1, keepdims=True) # (N, 1)
+    probs = exp_scores / sum_exp_scores
+    correct_probs = np.choose(y, probs.T) # (N, 1)
 
-    PYgX = correct_exp_scores / sum_exp_scores
-    loss = np.sum(-np.log(PYgX))
-
+    loss = np.sum(-np.log(correct_probs))
     loss /= float(N)
     loss += 0.5 * reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
     #############################################################################
@@ -115,7 +114,27 @@ class TwoLayerNet(object):
     # and biases. Store the results in the grads dictionary. For example,       #
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
-    pass
+
+    dscores = probs
+    dscores[np.arange(N), y] -= 1.0
+    dscores /= float(N)
+
+    dW2 = np.dot(h1.T, dscores) + reg * W2
+    db2 = np.sum(dscores, axis=0)
+
+    dh1 = np.dot(dscores, W2.T)
+
+    # grad for ReLU
+    dz = (z > 0) * dh1
+
+    dW1 = np.dot(X.T, dz) + reg * W1
+    db1 = np.sum(dz, axis=0)
+
+    grads = {
+      'W2': dW2, 'b2': db2,
+      'W1': dW1, 'b1': db1
+    }
+
     #############################################################################
     #                              END OF YOUR CODE                             #
     #############################################################################
@@ -225,5 +244,3 @@ class TwoLayerNet(object):
     ###########################################################################
 
     return y_pred
-
-
