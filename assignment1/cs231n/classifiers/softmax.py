@@ -72,6 +72,7 @@ def softmax_loss_vectorized(W, X, y, reg):
   # Initialize the loss and gradient to zero.
   loss = 0.0
   dW = np.zeros_like(W)
+  N = X.shape[0]
 
   #############################################################################
   # TODO: Compute the softmax loss and its gradient using no explicit loops.  #
@@ -79,27 +80,26 @@ def softmax_loss_vectorized(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  num_train = X.shape[0]
 
   scores = np.dot(X, W)
-  exp_scores = np.exp(scores)
-  correct_exp_scores = np.choose(y, exp_scores.T)
-  sum_exp_scores = np.sum(exp_scores, axis=1)
 
-  PYgX = correct_exp_scores / sum_exp_scores
-  loss = np.sum(-np.log(PYgX))
+  exp_scores = np.exp(scores) # (N, C)
+  sum_exp_scores = np.sum(exp_scores, axis=1, keepdims=True) # (N, 1)
+  probs = exp_scores / sum_exp_scores # (N, C)
+  correct_probs = np.choose(y, probs.T)
 
-  dW_mask = exp_scores / sum_exp_scores.reshape(num_train,1)
-  dW_mask[np.arange(num_train), y] -= 1.0
-
-  dW += np.dot(X.T, dW_mask)
-
-  # Divide by num_train to get averages
-  loss /= float(num_train)
-  dW   /= float(num_train)
-
-  # Add L2 regularization to the loss and gradient
+  loss = np.sum(-np.log(correct_probs))
+  # Divide by N to get averages and add L2 regularization
+  loss /= float(N)
   loss += 0.5 * reg * np.sum(W * W)
+
+  dscores = probs
+  dscores[np.arange(N), y] -= 1.0
+
+  dW += np.dot(X.T, dscores)
+  # Divide by N to get average
+  dW   /= float(N)
+  # Add the effect of L2 regularization
   dW   += reg * W
   #############################################################################
   #                          END OF YOUR CODE                                 #
