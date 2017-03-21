@@ -144,7 +144,7 @@ class TwoLayerNet(object):
   def train(self, X, y, X_val, y_val,
             learning_rate=1e-3, learning_rate_decay=0.95,
             reg=1e-5, num_iters=100,
-            batch_size=200, verbose=False):
+            batch_size=200, verbose=False, anneal_t0=None):
     """
     Train this neural network using stochastic gradient descent.
 
@@ -162,6 +162,7 @@ class TwoLayerNet(object):
     - batch_size: Number of training examples to use per step.
     - verbose: boolean; if true print progress during optimization.
     """
+    e_0 = learning_rate
     num_train = X.shape[0]
     iterations_per_epoch = max(num_train / batch_size, 1)
 
@@ -170,6 +171,8 @@ class TwoLayerNet(object):
     train_acc_history = []
     val_acc_history = []
 
+    max_val_acc = -1
+    max_val_acc_it = 1
     for it in xrange(num_iters):
       #########################################################################
       # TODO: Create a random minibatch of training data and labels, storing  #
@@ -209,8 +212,17 @@ class TwoLayerNet(object):
         train_acc_history.append(train_acc)
         val_acc_history.append(val_acc)
 
-        # Decay learning rate
-        learning_rate *= learning_rate_decay
+        if max_val_acc < val_acc:
+          max_val_acc, max_val_acc_it = val_acc, it
+        elif max_val_acc_it < (it / 2):
+          break
+
+        if anneal_t0 is not None:
+          if it > anneal_t0:
+            learning_rate = float(e_0) / float(it)
+        else:
+          # Decay learning rate
+          learning_rate *= learning_rate_decay
 
     return {
       'loss_history': loss_history,
