@@ -62,7 +62,7 @@ def affine_bn_relu_backward(dout, cache):
   da_bn = relu_backward(dout, relu_cache)
   da, dgamma, dbeta = batchnorm_backward(da_bn, bn_cache)
   dx, dw, db = affine_backward(da, fc_cache)
-  return dx, dw, db, dgamma, dbeta  
+  return dx, dw, db, dgamma, dbeta
 
 
 def conv_relu_forward(x, w, b, conv_param):
@@ -72,7 +72,7 @@ def conv_relu_forward(x, w, b, conv_param):
   Inputs:
   - x: Input to the convolutional layer
   - w, b, conv_param: Weights and parameters for the convolutional layer
-  
+
   Returns a tuple of:
   - out: Output from the ReLU
   - cache: Object to give to the backward pass

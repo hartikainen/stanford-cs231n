@@ -15,10 +15,10 @@ def blur_image(X):
   """
   A very gentle image blurring operation, to be used as a regularizer for image
   generation.
-  
+
   Inputs:
   - X: Image data of shape (N, 3, H, W)
-  
+
   Returns:
   - X_blur: Blurred version of X, of shape (N, 3, H, W)
   """
@@ -34,10 +34,10 @@ def blur_image(X):
 def preprocess_image(img, mean_img, mean='image'):
   """
   Convert to float, transepose, and subtract mean pixel
-  
+
   Input:
   - img: (H, W, 3)
-  
+
   Returns:
   - (1, 3, H, 3)
   """
@@ -55,10 +55,10 @@ def preprocess_image(img, mean_img, mean='image'):
 def deprocess_image(img, mean_img, mean='image', renorm=False):
   """
   Add mean pixel, transpose, and convert to uint8
-  
+
   Input:
   - (1, 3, H, W) or (3, H, W)
-  
+
   Returns:
   - (H, W, 3)
   """

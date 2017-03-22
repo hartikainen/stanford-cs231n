@@ -12,7 +12,7 @@ class PretrainedCNN(object):
     self.conv_params = []
     self.input_size = input_size
     self.num_classes = num_classes
-    
+
     # TODO: In the future it would be nice if the architecture could be loaded from
     # the HDF5 file rather than being hardcoded. For now this will have to do.
     self.conv_params.append({'stride': 2, 'pad': 2})
@@ -30,7 +30,7 @@ class PretrainedCNN(object):
     hidden_dim = 512
 
     self.bn_params = []
-    
+
     cur_size = input_size
     prev_dim = 3
     self.params = {}
@@ -43,7 +43,7 @@ class PretrainedCNN(object):
       self.bn_params.append({'mode': 'train'})
       prev_dim = next_dim
       if self.conv_params[i]['stride'] == 2: cur_size /= 2
-    
+
     # Add a fully-connected layers
     fan_in = cur_size * cur_size * self.num_filters[-1]
     self.params['W%d' % (i + 2)] = np.sqrt(2.0 / fan_in) * np.random.randn(fan_in, hidden_dim)
@@ -53,14 +53,14 @@ class PretrainedCNN(object):
     self.bn_params.append({'mode': 'train'})
     self.params['W%d' % (i + 3)] = np.sqrt(2.0 / hidden_dim) * np.random.randn(hidden_dim, num_classes)
     self.params['b%d' % (i + 3)] = np.zeros(num_classes)
-    
+
     for k, v in self.params.iteritems():
       self.params[k] = v.astype(dtype)
 
     if h5_file is not None:
       self.load_weights(h5_file)
 
-  
+
   def load_weights(self, h5_file, verbose=False):
     """
     Load pretrained weights from an HDF5 file.
@@ -97,11 +97,11 @@ class PretrainedCNN(object):
           assert v.shape == self.bn_params[i]['running_var'].shape
           self.bn_params[i]['running_var'] = v.copy()
           if verbose: print k, v.shape
-        
+
     for k, v in self.params.iteritems():
       self.params[k] = v.astype(self.dtype)
 
-  
+
   def forward(self, X, start=None, end=None, mode='test'):
     """
     Run part of the model forward, starting and ending at an arbitrary layer,

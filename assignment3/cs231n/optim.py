@@ -66,7 +66,7 @@ def adam(x, dx, config=None):
   config.setdefault('m', np.zeros_like(x))
   config.setdefault('v', np.zeros_like(x))
   config.setdefault('t', 0)
-  
+
   next_x = None
   beta1, beta2, eps = config['beta1'], config['beta2'], config['epsilon']
   t, m, v = config['t'], config['m'], config['v']
@@ -79,7 +79,7 @@ def adam(x, dx, config=None):
   config['m'] = m
   config['v'] = v
   next_x = x
-  
+
   return next_x, config
 
-  
+

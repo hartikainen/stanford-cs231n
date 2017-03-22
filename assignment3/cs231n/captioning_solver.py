@@ -16,18 +16,18 @@ class CaptioningSolver(object):
 
   To train a model, you will first construct a CaptioningSolver instance,
   passing the model, dataset, and various options (learning rate, batch size,
-  etc) to the constructor. You will then call the train() method to run the 
+  etc) to the constructor. You will then call the train() method to run the
   optimization procedure and train the model.
-  
+
   After the train() method returns, model.params will contain the parameters
   that performed best on the validation set over the course of training.
   In addition, the instance variable solver.loss_history will contain a list
   of all losses encountered during training and the instance variables
   solver.train_acc_history and solver.val_acc_history will be lists containing
   the accuracies of the model on the training and validation set at each epoch.
-  
+
   Example usage might look something like this:
-  
+
   data = load_coco_data()
   model = MyAwesomeModel(hidden_dim=100)
   solver = CaptioningSolver(model, data,
@@ -64,7 +64,7 @@ class CaptioningSolver(object):
   def __init__(self, model, data, **kwargs):
     """
     Construct a new CaptioningSolver instance.
-    
+
     Required arguments:
     - model: A model object conforming to the API described above
     - data: A dictionary of training and validation data from load_coco_data
@@ -88,7 +88,7 @@ class CaptioningSolver(object):
     """
     self.model = model
     self.data = data
-    
+
     # Unpack keyword arguments
     self.update_rule = kwargs.pop('update_rule', 'sgd')
     self.optim_config = kwargs.pop('optim_config', {})
@@ -156,12 +156,12 @@ class CaptioningSolver(object):
       self.model.params[p] = next_w
       self.optim_configs[p] = next_config
 
-  
+
   # TODO: This does nothing right now; maybe implement BLEU?
   def check_accuracy(self, X, y, num_samples=None, batch_size=100):
     """
     Check accuracy of the model on the provided data.
-    
+
     Inputs:
     - X: Array of data, of shape (N, d_1, ..., d_k)
     - y: Array of labels, of shape (N,)
@@ -169,13 +169,13 @@ class CaptioningSolver(object):
       on num_samples datapoints.
     - batch_size: Split X and y into batches of this size to avoid using too
       much memory.
-      
+
     Returns:
     - acc: Scalar giving the fraction of instances that were correctly
       classified by the model.
     """
     return 0.0
-    
+
     # Maybe subsample the data
     N = X.shape[0]
     if num_samples is not None and N > num_samples:
