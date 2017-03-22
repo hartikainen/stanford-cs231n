@@ -51,7 +51,7 @@ def conv_forward_strides(x, w, b, conv_param):
   # Pad the input
   p = pad
   x_padded = np.pad(x, ((0, 0), (0, 0), (p, p), (p, p)), mode='constant')
-  
+
   # Figure out output dimensions
   H += 2 * pad
   W += 2 * pad
@@ -81,7 +81,7 @@ def conv_forward_strides(x, w, b, conv_param):
 
   cache = (x, w, b, conv_param, x_cols)
   return out, cache
-  
+
 
 def conv_backward_strides(dout, cache):
   x, w, b, conv_param, x_cols = cache

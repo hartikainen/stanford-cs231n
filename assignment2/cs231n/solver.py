@@ -17,16 +17,16 @@ class Solver(object):
   model, dataset, and various optoins (learning rate, batch size, etc) to the
   constructor. You will then call the train() method to run the optimization
   procedure and train the model.
-  
+
   After the train() method returns, model.params will contain the parameters
   that performed best on the validation set over the course of training.
   In addition, the instance variable solver.loss_history will contain a list
   of all losses encountered during training and the instance variables
   solver.train_acc_history and solver.val_acc_history will be lists containing
   the accuracies of the model on the training and validation set at each epoch.
-  
+
   Example usage might look something like this:
-  
+
   data = {
     'X_train': # training data
     'y_train': # training labels
@@ -74,7 +74,7 @@ class Solver(object):
   def __init__(self, model, data, **kwargs):
     """
     Construct a new Solver instance.
-    
+
     Required arguments:
     - model: A model object conforming to the API described above
     - data: A dictionary of training and validation data with the following:
@@ -82,7 +82,7 @@ class Solver(object):
       'X_val': Array of shape (N_val, d_1, ..., d_k) giving validation images
       'y_train': Array of shape (N_train,) giving labels for training images
       'y_val': Array of shape (N_val,) giving labels for validation images
-      
+
     Optional arguments:
     - update_rule: A string giving the name of an update rule in optim.py.
       Default is 'sgd'.
@@ -105,7 +105,7 @@ class Solver(object):
     self.y_train = data['y_train']
     self.X_val = data['X_val']
     self.y_val = data['y_val']
-    
+
     # Unpack keyword arguments
     self.update_rule = kwargs.pop('update_rule', 'sgd')
     self.optim_config = kwargs.pop('optim_config', {})
@@ -177,7 +177,7 @@ class Solver(object):
   def check_accuracy(self, X, y, num_samples=None, batch_size=100):
     """
     Check accuracy of the model on the provided data.
-    
+
     Inputs:
     - X: Array of data, of shape (N, d_1, ..., d_k)
     - y: Array of labels, of shape (N,)
@@ -185,12 +185,12 @@ class Solver(object):
       on num_samples datapoints.
     - batch_size: Split X and y into batches of this size to avoid using too
       much memory.
-      
+
     Returns:
     - acc: Scalar giving the fraction of instances that were correctly
       classified by the model.
     """
-    
+
     # Maybe subsample the data
     N = X.shape[0]
     if num_samples is not None and N > num_samples:

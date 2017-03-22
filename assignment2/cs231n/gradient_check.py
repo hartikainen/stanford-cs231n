@@ -2,11 +2,11 @@ import numpy as np
 from random import randrange
 
 def eval_numerical_gradient(f, x, verbose=True, h=0.00001):
-  """ 
-  a naive implementation of numerical gradient of f at x 
+  """
+  a naive implementation of numerical gradient of f at x
   - f should be a function that takes a single argument
   - x is the point (numpy array) to evaluate the gradient at
-  """ 
+  """
 
   fx = f(x) # evaluate function value at original point
   grad = np.zeros_like(x)
@@ -41,14 +41,14 @@ def eval_numerical_gradient_array(f, x, df, h=1e-5):
   it = np.nditer(x, flags=['multi_index'], op_flags=['readwrite'])
   while not it.finished:
     ix = it.multi_index
-    
+
     oldval = x[ix]
     x[ix] = oldval + h
     pos = f(x).copy()
     x[ix] = oldval - h
     neg = f(x).copy()
     x[ix] = oldval
-    
+
     grad[ix] = np.sum((pos - neg) * df) / (2 * h)
     it.iternext()
   return grad
@@ -58,15 +58,15 @@ def eval_numerical_gradient_blobs(f, inputs, output, h=1e-5):
   """
   Compute numeric gradients for a function that operates on input
   and output blobs.
-  
+
   We assume that f accepts several input blobs as arguments, followed by a blob
   into which outputs will be written. For example, f might be called like this:
 
   f(x, w, out)
-  
+
   where x and w are input Blobs, and the result of f will be written to out.
 
-  Inputs: 
+  Inputs:
   - f: function
   - inputs: tuple of input blobs
   - output: output blob
@@ -88,7 +88,7 @@ def eval_numerical_gradient_blobs(f, inputs, output, h=1e-5):
       f(*(inputs + (output,)))
       neg = np.copy(output.vals)
       input_blob.vals[idx] = orig
-      
+
       diff[idx] = np.sum((pos - neg) * output.diffs) / (2.0 * h)
 
       it.iternext()
