@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+def init_weights(n1, n2):
+  n1, n2 = float(n1), float(n2)
+  return np.random.randn(n1, n2) / np.sqrt(n1/2)
 
 class TwoLayerNet(object):
   """
@@ -75,7 +78,7 @@ class TwoLayerNet(object):
     # shape (N, C).                                                             #
     #############################################################################
     z = np.dot(X, W1) + b1
-    h1 = np.maximum(z, 0, z) # third argument makes ReLU operate in place
+    h1 = np.maximum(z, 0) # third argument makes ReLU operate in place
     scores = np.dot(h1, W2) + b2
     #############################################################################
     #                              END OF YOUR CODE                             #
@@ -173,6 +176,7 @@ class TwoLayerNet(object):
 
     max_val_acc = -1
     max_val_acc_it = 1
+    epoch = 1
     for it in xrange(num_iters):
       #########################################################################
       # TODO: Create a random minibatch of training data and labels, storing  #
@@ -223,6 +227,12 @@ class TwoLayerNet(object):
         else:
           # Decay learning rate
           learning_rate *= learning_rate_decay
+
+        if verbose:
+          print("Finished epoch {}, loss: {}, train: {}, val: {}, lr: {}"
+                "".format(epoch, loss, train_acc, val_acc, learning_rate))
+
+        epoch += 1
 
     return {
       'loss_history': loss_history,
