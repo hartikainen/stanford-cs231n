@@ -83,7 +83,7 @@ def softmax_loss_vectorized(W, X, y, reg):
 
   scores = np.dot(X, W)
 
-  exp_scores = np.exp(scores) # (N, C)
+  exp_scores = np.exp(scores - np.max(scores, axis=1, keepdims=True)) # (N, C)
   sum_exp_scores = np.sum(exp_scores, axis=1, keepdims=True) # (N, 1)
   probs = exp_scores / sum_exp_scores # (N, C)
   correct_probs = np.choose(y, probs.T)
@@ -93,7 +93,7 @@ def softmax_loss_vectorized(W, X, y, reg):
   loss /= float(N)
   loss += 0.5 * reg * np.sum(W * W)
 
-  dscores = probs
+  dscores = probs.copy()
   dscores[np.arange(N), y] -= 1.0
 
   dW += np.dot(X.T, dscores)
