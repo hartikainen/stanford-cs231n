@@ -120,6 +120,12 @@ class TwoLayerNet(object):
 
     return loss, grads
 
+def W_key(layer_idx):
+  return "W" + str(layer_idx)
+
+def b_key(layer_idx):
+  return "b" + str(layer_idx)
+
 class FullyConnectedNet(object):
   """
   A fully-connected neural network with an arbitrary number of hidden layers,
@@ -165,6 +171,7 @@ class FullyConnectedNet(object):
     self.num_layers = 1 + len(hidden_dims)
     self.dtype = dtype
     self.params = {}
+    self.layers = ['affine_relu'] * (self.num_layers - 1) + ['affine']
 
     ############################################################################
     # TODO: Initialize the parameters of the network, storing all values in    #
@@ -178,25 +185,11 @@ class FullyConnectedNet(object):
     # beta2, etc. Scale parameters should be initialized to one and shift      #
     # parameters should be initialized to zero.                                #
     ############################################################################
-    def init_weight(n1, n2, scale):
-      return np.random.randn(n1, n2) * weight_scale
-
-    def init_bias(size):
-      return np.zeros(size)
-
-    self.params['W1'] = init_weight(input_dim, hidden_dims[0], weight_scale)
-    self.params['b1'] = init_bias(hidden_dims[0])
-
-    for i in xrange(1, self.num_layers-1):
-      n1, n2 = hidden_dims[i-1:i+1]
-      self.params['W{}'.format(i+1)] = init_weight(n1, n2, weight_scale)
-      self.params['b{}'.format(i+1)] = init_bias(n2)
-
-    i = self.num_layers
-    self.params['W{}'.format(i)] = init_weight(
-      hidden_dims[-1], num_classes, weight_scale
-    )
-    self.params['b{}'.format(i)] = init_bias(num_classes)
+    dims = [input_dim] + hidden_dims + [num_classes]
+    for l in xrange(1, len(dims)):
+      n1, n2 = dims[l-1:l+1]
+      self.params[W_key(l)] = np.random.randn(n1, n2) * weight_scale
+      self.params[b_key(l)] = np.zeros(n2)
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -258,12 +251,12 @@ class FullyConnectedNet(object):
 
     h = X
     for l in xrange(1, self.num_layers):
-      W, b = self.params['W{}'.format(l)], self.params['b{}'.format(l)]
+      W, b = self.params[W_key(l)], self.params[b_key(l)]
       h, layer_cache = affine_relu_forward(h, W, b)
       cache[l] = layer_cache
 
     l = self.num_layers
-    W, b = self.params['W{}'.format(l)], self.params['b{}'.format(l)]
+    W, b = self.params[W_key(l)], self.params[b_key(l)]
     scores, scores_cache = affine_forward(h, W, b)
 
     ############################################################################
@@ -290,24 +283,19 @@ class FullyConnectedNet(object):
     ############################################################################
     loss, dscores = softmax_loss(scores, y)
     weight_sums = np.sum(
-      np.sum(W**2) for k, W in self.params.iteritems() if k[0] == 'W'
+      np.sum(self.params[W_key(l)] ** 2) for l in xrange(1, self.num_layers+1)
     )
     loss += 0.5 * self.reg * (weight_sums)
 
     l = self.num_layers
     dh, dW, db = affine_backward(dscores, scores_cache)
-    dW += self.reg * self.params['W{}'.format(l)]
-    grads.update({
-      'W{}'.format(l): dW,
-      'b{}'.format(l): db
-    })
+    dW += self.reg * self.params[W_key(l)]
+    grads.update({ W_key(l): dW, b_key(l): db })
+
     for l in xrange(self.num_layers-1, 0, -1):
       dh, dW, db = affine_relu_backward(dh, cache[l])
-      dW += self.reg * self.params['W{}'.format(l)]
-      grads.update({
-        'W{}'.format(l): dW,
-        'b{}'.format(l): db
-      })
+      dW += self.reg * self.params[W_key(l)]
+      grads.update({ W_key(l): dW, b_key(l): db })
 
     ############################################################################
     #                             END OF YOUR CODE                             #
