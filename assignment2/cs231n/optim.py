@@ -56,16 +56,16 @@ def sgd_momentum(w, dw, config=None):
     average of the gradients.
   """
   if config is None: config = {}
-  config.setdefault('learning_rate', 1e-2)
-  config.setdefault('momentum', 0.9)
+  learning_rate = config.setdefault('learning_rate', 1e-2)
+  mu = config.setdefault('momentum', 0.9)
   v = config.get('velocity', np.zeros_like(w))
 
-  next_w = None
   #############################################################################
   # TODO: Implement the momentum update formula. Store the updated value in   #
   # the next_w variable. You should also use and update the velocity v.       #
   #############################################################################
-  pass
+  v = mu*v - learning_rate*dw
+  next_w = w + v
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -73,6 +73,31 @@ def sgd_momentum(w, dw, config=None):
 
   return next_w, config
 
+
+def nesterov_momentum(w, dw, config=None):
+  """
+  Performs nesterov momentum update rule, which adds updates the weights with
+  a "lookahead" gradient.
+
+  config format (same as for sgd_momentum):
+  - learning_rate: Scalar learning rate.
+  - momentum: Scalar between 0 and 1 giving the momentum value.
+    Setting momentum = 0 reduces to sgd.
+  - velocity: A numpy array of the same shape as w and dw used to store a moving
+    average of the gradients.
+  """
+  if config is None: config = {}
+  learning_rate = config.setdefault('learning_rate', 1e-2)
+  mu = config.setdefault('momentum', 0.9)
+  v = config.get('velocity', np.zeros_like(w))
+
+  v_prev = v
+  v = mu*v - learning_rate*dw
+  w += -mu*v_prev + (1+mu)*v
+
+  config['velocity'] = v
+
+  return w, config
 
 
 def rmsprop(x, dx, config=None):
@@ -142,8 +167,3 @@ def adam(x, dx, config=None):
   #############################################################################
 
   return next_x, config
-
-
-
-
-
