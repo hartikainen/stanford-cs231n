@@ -123,8 +123,41 @@ class TwoLayerNet(object):
 def W_key(layer_idx):
   return "W" + str(layer_idx)
 
+
 def b_key(layer_idx):
   return "b" + str(layer_idx)
+
+
+def gamma_key(layer_idx):
+  return "gamma" + str(layer_idx)
+
+
+def beta_key(layer_idx):
+  return "beta" + str(layer_idx)
+
+
+def affine_batchnorm_relu_forward(x, w, b, gamma, beta, bn_param):
+  """
+  Forward pass for the affine-batchnorm-relu convenience layer
+  """
+  fc, fc_cache = affine_forward(x, w, b)
+  bn, bn_cache = batchnorm_forward(fc, gamma, beta, bn_param)
+  out, relu_cache = relu_forward(bn)
+  cache = (fc_cache, bn_cache, relu_cache)
+
+  return out, cache
+
+
+def affine_batchnorm_relu_backward(dout, cache):
+  """
+  Backward pass for the affine-batchnorm-relu convenience layer
+  """
+  fc_cache, bn_cache, relu_cache = cache
+  drelu = relu_backward(dout, relu_cache)
+  dbn, dgamma, dbeta = batchnorm_backward_alt(drelu, bn_cache)
+  dx, dw, db = affine_backward(dbn, fc_cache)
+
+  return dx, dw, db, dbn, dgamma, dbeta
 
 class FullyConnectedNet(object):
   """
@@ -171,7 +204,12 @@ class FullyConnectedNet(object):
     self.num_layers = 1 + len(hidden_dims)
     self.dtype = dtype
     self.params = {}
-    self.layers = ['affine_relu'] * (self.num_layers - 1) + ['affine']
+
+    if self.use_batchnorm:
+      self.layers = ['affine_relu', 'batchnorm'] * (self.num_layers - 1)
+    else:
+      self.layers = ['affine_relu'] * (self.num_layers - 1)
+    self.layers += ['affine']
 
     ############################################################################
     # TODO: Initialize the parameters of the network, storing all values in    #
@@ -190,6 +228,12 @@ class FullyConnectedNet(object):
       n1, n2 = dims[l-1:l+1]
       self.params[W_key(l)] = np.random.randn(n1, n2) * weight_scale
       self.params[b_key(l)] = np.zeros(n2)
+
+    if self.use_batchnorm:
+      for l in xrange(1, len(dims)-1):
+        n = dims[l]
+        self.params[gamma_key(l)] = np.ones(n)
+        self.params[beta_key(l)] = np.zeros(n)
     ############################################################################
     #                             END OF YOUR CODE                             #
     ############################################################################
@@ -250,10 +294,20 @@ class FullyConnectedNet(object):
     cache = {}
 
     h = X
-    for l in xrange(1, self.num_layers):
-      W, b = self.params[W_key(l)], self.params[b_key(l)]
-      h, layer_cache = affine_relu_forward(h, W, b)
-      cache[l] = layer_cache
+    if self.use_batchnorm:
+      for l in xrange(1, self.num_layers):
+        W, b = self.params[W_key(l)], self.params[b_key(l)]
+        gamma, beta = self.params[gamma_key(l)], self.params[beta_key(l)]
+        bn_param = self.bn_params[l-1]
+        h, layer_cache = affine_batchnorm_relu_forward(
+          h, W, b, gamma, beta, bn_param
+        )
+        cache[l] = layer_cache
+    else:
+      for l in xrange(1, self.num_layers):
+        W, b = self.params[W_key(l)], self.params[b_key(l)]
+        h, layer_cache = affine_relu_forward(h, W, b)
+        cache[l] = layer_cache
 
     l = self.num_layers
     W, b = self.params[W_key(l)], self.params[b_key(l)]
@@ -292,10 +346,21 @@ class FullyConnectedNet(object):
     dW += self.reg * self.params[W_key(l)]
     grads.update({ W_key(l): dW, b_key(l): db })
 
-    for l in xrange(self.num_layers-1, 0, -1):
-      dh, dW, db = affine_relu_backward(dh, cache[l])
-      dW += self.reg * self.params[W_key(l)]
-      grads.update({ W_key(l): dW, b_key(l): db })
+    if self.use_batchnorm:
+      for l in xrange(self.num_layers-1, 0, -1):
+        dh, dW, db, dbn, dgamma, dbeta = affine_batchnorm_relu_backward(
+          dh, cache[l]
+        )
+        dW += self.reg * self.params[W_key(l)]
+        grads.update({
+          W_key(l): dW, b_key(l): db,
+          gamma_key(l): dgamma, beta_key(l): dbeta
+        })
+    else:
+      for l in xrange(self.num_layers-1, 0, -1):
+        dh, dW, db = affine_relu_backward(dh, cache[l])
+        dW += self.reg * self.params[W_key(l)]
+        grads.update({ W_key(l): dW, b_key(l): db })
 
     ############################################################################
     #                             END OF YOUR CODE                             #
