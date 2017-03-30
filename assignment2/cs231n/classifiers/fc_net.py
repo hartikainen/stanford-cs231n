@@ -205,11 +205,20 @@ class FullyConnectedNet(object):
     self.dtype = dtype
     self.params = {}
 
-    if self.use_batchnorm:
-      self.layers = ['affine_relu', 'batchnorm'] * (self.num_layers - 1)
-    else:
-      self.layers = ['affine_relu'] * (self.num_layers - 1)
-    self.layers += ['affine']
+    self.layers = []
+
+    for l in xrange(self.num_layers-1):
+      if self.use_batchnorm:
+        layer = ["affine_batchnorm_relu"]
+      else:
+        layer = ["affine_relu"]
+
+      if self.use_dropout:
+        layer.append("dropout")
+
+      self.layers.append(layer)
+
+    self.layers.append(["affine"])
 
     ############################################################################
     # TODO: Initialize the parameters of the network, storing all values in    #
@@ -293,25 +302,37 @@ class FullyConnectedNet(object):
     ############################################################################
     cache = {}
 
-    h = X
-    if self.use_batchnorm:
-      for l in xrange(1, self.num_layers):
-        W, b = self.params[W_key(l)], self.params[b_key(l)]
-        gamma, beta = self.params[gamma_key(l)], self.params[beta_key(l)]
-        bn_param = self.bn_params[l-1]
-        h, layer_cache = affine_batchnorm_relu_forward(
-          h, W, b, gamma, beta, bn_param
-        )
-        cache[l] = layer_cache
-    else:
-      for l in xrange(1, self.num_layers):
-        W, b = self.params[W_key(l)], self.params[b_key(l)]
-        h, layer_cache = affine_relu_forward(h, W, b)
-        cache[l] = layer_cache
+    out = X
+    for l, layer in enumerate(self.layers[:-1], 1):
+
+      layer_cache = []
+
+      for k, layer_type in enumerate(layer):
+
+        if layer_type == "affine_batchnorm_relu":
+          W, b = self.params[W_key(l)], self.params[b_key(l)]
+          gamma, beta = self.params[gamma_key(l)], self.params[beta_key(l)]
+          bn_param = self.bn_params[l-1]
+          out, out_cache = affine_batchnorm_relu_forward(out, W, b,
+                                                         gamma, beta, bn_param)
+
+        elif layer_type == "affine_relu":
+          W, b = self.params[W_key(l)], self.params[b_key(l)]
+          out, out_cache = affine_relu_forward(out, W, b)
+
+        elif layer_type == "dropout":
+          out, out_cache = dropout_forward(out, self.dropout_param)
+
+        else:
+          print("WARNING: No layer found", layer_type)
+
+        layer_cache.append(out_cache)
+
+      cache[l] = layer_cache
 
     l = self.num_layers
     W, b = self.params[W_key(l)], self.params[b_key(l)]
-    scores, scores_cache = affine_forward(h, W, b)
+    scores, scores_cache = affine_forward(out, W, b)
 
     ############################################################################
     #                             END OF YOUR CODE                             #
@@ -342,25 +363,33 @@ class FullyConnectedNet(object):
     loss += 0.5 * self.reg * (weight_sums)
 
     l = self.num_layers
-    dh, dW, db = affine_backward(dscores, scores_cache)
+    dout, dW, db = affine_backward(dscores, scores_cache)
     dW += self.reg * self.params[W_key(l)]
     grads.update({ W_key(l): dW, b_key(l): db })
 
-    if self.use_batchnorm:
-      for l in xrange(self.num_layers-1, 0, -1):
-        dh, dW, db, dbn, dgamma, dbeta = affine_batchnorm_relu_backward(
-          dh, cache[l]
-        )
-        dW += self.reg * self.params[W_key(l)]
-        grads.update({
-          W_key(l): dW, b_key(l): db,
-          gamma_key(l): dgamma, beta_key(l): dbeta
-        })
-    else:
-      for l in xrange(self.num_layers-1, 0, -1):
-        dh, dW, db = affine_relu_backward(dh, cache[l])
-        dW += self.reg * self.params[W_key(l)]
-        grads.update({ W_key(l): dW, b_key(l): db })
+    for l, layer in reversed(list(enumerate(self.layers[:-1], 1))):
+
+      layer_cache = cache[l]
+
+      for k, layer_type in reversed(list(enumerate(layer))):
+
+        if layer_type == "affine_batchnorm_relu":
+          dout, dW, db, dbn, dgamma, dbeta = affine_batchnorm_relu_backward(
+            dout, layer_cache[k]
+          )
+          dW += self.reg * self.params[W_key(l)]
+          grads.update({
+            W_key(l): dW, b_key(l): db,
+            gamma_key(l): dgamma, beta_key(l): dbeta
+          })
+
+        elif layer_type == "affine_relu":
+          dout, dW, db = affine_relu_backward(dout, layer_cache[k])
+          dW += self.reg * self.params[W_key(l)]
+          grads.update({ W_key(l): dW, b_key(l): db })
+
+        elif layer_type == "dropout":
+          dout = dropout_backward(dout, layer_cache[k])
 
     ############################################################################
     #                             END OF YOUR CODE                             #
