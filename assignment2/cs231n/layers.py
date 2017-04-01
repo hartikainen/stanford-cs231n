@@ -402,13 +402,14 @@ def conv_forward_naive(x, w, b, conv_param):
 
   out = np.zeros((N, F, H_, W_))
   x_padded = np.pad(x, ((0,), (0,), (pad,), (pad,)), 'constant')
+  w_reshaped = w.reshape(F, -1).T
 
-  for n in xrange(N):
-    img = x_padded[n]
-    for f in xrange(F):
-      for i, ii in enumerate(xrange(0, H_*stride, stride)):
-        for j, jj in enumerate(xrange(0, W_*stride, stride)):
-          out[n, f, i, j] = np.sum(img[:, ii:ii+HH, jj:jj+WW] * w[f]) + b[f]
+  for i, ii in enumerate(xrange(0, H_*stride, stride)):
+    for j, jj in enumerate(xrange(0, W_*stride, stride)):
+      out[:,:,i,j] = np.dot(
+        x_padded[:, :, ii:ii+HH, jj:jj+WW].reshape(N, -1),
+        w_reshaped
+      ) + b
 
   #############################################################################
   #                             END OF YOUR CODE                              #
@@ -443,13 +444,17 @@ def conv_backward_naive(dout, cache):
 
   dx_padded, dw = np.zeros(x_padded.shape), np.zeros(w.shape)
 
-  for n in xrange(N):
-    img = x_padded[n]
-    for f in xrange(F):
-      for i, ii in enumerate(xrange(0, H_*stride, stride)):
-        for j, jj in enumerate(xrange(0, W_*stride, stride)):
-          dw[f] += img[:, ii:ii+HH, jj:jj+WW] * dout[n,f,i,j]
-          dx_padded[n, :, ii:ii+HH, jj:jj+WW] += w[f] * dout[n,f,i,j]
+  w_reshaped = w.reshape(F, -1)
+
+  for i, ii in enumerate(xrange(0, H_*stride, stride)):
+    for j, jj in enumerate(xrange(0, W_*stride, stride)):
+      dw += np.dot(
+        dout[:,:,i,j].T, x_padded[:, :, ii:ii+HH, jj:jj+WW].reshape(N, -1)
+      ).reshape(dw.shape)
+
+      dx_padded[:, :, ii:ii+HH, jj:jj+WW] += np.dot(
+        dout[:,:,i,j], w_reshaped
+      ).reshape(N,C,HH,WW)
 
   dx = dx_padded[:, :, pad:-pad, pad:-pad]
   db = np.sum(dout, axis=(0,2,3))
