@@ -406,8 +406,8 @@ def conv_forward_naive(x, w, b, conv_param):
   for n in xrange(N):
     img = x_padded[n]
     for f in xrange(F):
-      for i, ii in enumerate(range(0, H_*stride, stride)):
-        for j, jj in enumerate(range(0, W_*stride, stride)):
+      for i, ii in enumerate(xrange(0, H_*stride, stride)):
+        for j, jj in enumerate(xrange(0, W_*stride, stride)):
           out[n, f, i, j] = np.sum(img[:, ii:ii+HH, jj:jj+WW] * w[f]) + b[f]
 
   #############################################################################
@@ -446,8 +446,8 @@ def conv_backward_naive(dout, cache):
   for n in xrange(N):
     img = x_padded[n]
     for f in xrange(F):
-      for i, ii in enumerate(range(0, H_*stride, stride)):
-        for j, jj in enumerate(range(0, W_*stride, stride)):
+      for i, ii in enumerate(xrange(0, H_*stride, stride)):
+        for j, jj in enumerate(xrange(0, W_*stride, stride)):
           dw[f] += img[:, ii:ii+HH, jj:jj+WW] * dout[n,f,i,j]
           dx_padded[n, :, ii:ii+HH, jj:jj+WW] += w[f] * dout[n,f,i,j]
 
@@ -474,11 +474,19 @@ def max_pool_forward_naive(x, pool_param):
   - out: Output data
   - cache: (x, pool_param)
   """
-  out = None
   #############################################################################
   # TODO: Implement the max pooling forward pass                              #
   #############################################################################
-  pass
+  HH, WW = pool_param['pool_height'], pool_param['pool_width']
+  stride = pool_param['stride']
+
+  N, C, H, W = x.shape
+  H_, W_ = (H - HH) / stride + 1, (W - WW) / stride + 1
+
+  out = np.zeros((N, C, H_, W_))
+  for i, ii in enumerate(xrange(0, H-HH+1, stride)):
+    for j, jj in enumerate(xrange(0, W-WW+1, stride)):
+      out[:,:,i,j] = np.max(x[:,:,ii:ii+HH,jj:jj+WW], axis=(2,3))
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
