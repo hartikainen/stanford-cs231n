@@ -1,4 +1,5 @@
 import numpy as np
+from cs231n.im2col import im2col_indices, col2im_indices
 
 
 def affine_forward(x, w, b):
@@ -488,6 +489,13 @@ def max_pool_forward_naive(x, pool_param):
   N, C, H, W = x.shape
   H_, W_ = (H - HH) / stride + 1, (W - WW) / stride + 1
 
+  x_col = im2col_indices(
+    x.reshape(N*C,1,H,W), HH, WW, padding=0, stride=stride
+  )
+
+  switches = np.argmax(x_col, axis=0)
+  out = np.choose(switches, x_col).reshape(H_,W_,N,C).transpose(2,3,0,1)
+
   out = np.zeros((N, C, H_, W_))
   for i, ii in enumerate(xrange(0, H-HH+1, stride)):
     for j, jj in enumerate(xrange(0, W-WW+1, stride)):
@@ -495,7 +503,7 @@ def max_pool_forward_naive(x, pool_param):
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
-  cache = (x, pool_param)
+  cache = (x, pool_param, x_col, switches)
   return out, cache
 
 
@@ -510,11 +518,23 @@ def max_pool_backward_naive(dout, cache):
   Returns:
   - dx: Gradient with respect to x
   """
-  dx = None
   #############################################################################
   # TODO: Implement the max pooling backward pass                             #
   #############################################################################
-  pass
+  x, pool_param, x_col, switches = cache
+
+  HH, WW = pool_param['pool_height'], pool_param['pool_width']
+  stride = pool_param['stride']
+
+  N, C, H, W = x.shape
+
+  dx_col = np.zeros_like(x_col)
+  dout_flat = dout.transpose(2,3,0,1).ravel()
+
+  dx_col[switches, np.arange(switches.size)] = dout_flat
+  dx = col2im_indices(
+    dx_col, (N*C, 1, H, W), HH, WW, padding=0, stride=stride
+  ).reshape(x.shape)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
