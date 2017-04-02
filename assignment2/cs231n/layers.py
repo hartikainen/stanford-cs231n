@@ -563,7 +563,6 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
   - out: Output data, of shape (N, C, H, W)
   - cache: Values needed for the backward pass
   """
-  out, cache = None, None
 
   #############################################################################
   # TODO: Implement the forward pass for spatial batch normalization.         #
@@ -572,7 +571,10 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
   # version of batch normalization defined above. Your implementation should  #
   # be very short; ours is less than five lines.                              #
   #############################################################################
-  pass
+  N, C, H, W = x.shape
+  col_x = x.transpose(0,2,3,1).reshape(-1, C)
+  col_out, cache = batchnorm_forward(col_x, gamma, beta, bn_param)
+  out = col_out.reshape(N,H,W,C).transpose(0,3,1,2)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -602,7 +604,10 @@ def spatial_batchnorm_backward(dout, cache):
   # version of batch normalization defined above. Your implementation should  #
   # be very short; ours is less than five lines.                              #
   #############################################################################
-  pass
+  N, C, H, W = dout.shape
+  col_dout = dout.transpose(0,2,3,1).reshape(-1, C)
+  dcol_x, dgamma, dbeta = batchnorm_backward_alt(col_dout, cache)
+  dx = dcol_x.reshape(N,H,W,C).transpose(0,3,1,2)
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
