@@ -157,7 +157,7 @@ def affine_batchnorm_relu_backward(dout, cache):
   dbn, dgamma, dbeta = batchnorm_backward_alt(drelu, bn_cache)
   dx, dw, db = affine_backward(dbn, fc_cache)
 
-  return dx, dw, db, dbn, dgamma, dbeta
+  return dx, dw, db, dgamma, dbeta
 
 class FullyConnectedNet(object):
   """
@@ -285,7 +285,7 @@ class FullyConnectedNet(object):
       self.dropout_param['mode'] = mode
     if self.use_batchnorm:
       for bn_param in self.bn_params:
-        bn_param[mode] = mode
+        bn_param['mode'] = mode
 
     scores = None
     ############################################################################
@@ -374,7 +374,7 @@ class FullyConnectedNet(object):
       for k, layer_type in reversed(list(enumerate(layer))):
 
         if layer_type == "affine_batchnorm_relu":
-          dout, dW, db, dbn, dgamma, dbeta = affine_batchnorm_relu_backward(
+          dout, dW, db, dgamma, dbeta = affine_batchnorm_relu_backward(
             dout, layer_cache[k]
           )
           dW += self.reg * self.params[W_key(l)]
