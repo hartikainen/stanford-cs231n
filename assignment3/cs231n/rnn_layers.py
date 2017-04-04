@@ -32,7 +32,9 @@ def rnn_step_forward(x, prev_h, Wx, Wh, b):
   # hidden state and any values you need for the backward pass in the next_h   #
   # and cache variables respectively.                                          #
   ##############################################################################
-  pass
+  s = np.dot(x, Wx) + np.dot(prev_h, Wh) + b
+  next_h = np.tanh(s)
+  cache = (prev_h, x, Wh, Wx, b, next_h)
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
@@ -54,14 +56,23 @@ def rnn_step_backward(dnext_h, cache):
   - dWh: Gradients of hidden-to-hidden weights, of shape (H, H)
   - db: Gradients of bias vector, of shape (H,)
   """
-  dx, dprev_h, dWx, dWh, db = None, None, None, None, None
+  prev_h, x, Wh, Wx, b, next_h = cache
   ##############################################################################
   # TODO: Implement the backward pass for a single step of a vanilla RNN.      #
   #                                                                            #
   # HINT: For the tanh function, you can compute the local derivative in terms #
   # of the output value from tanh.                                             #
   ##############################################################################
-  pass
+  dtanh = 1.0 - next_h ** 2
+  ds = dnext_h * dtanh
+
+  dx = np.dot(ds, Wx.T)
+  dWx = np.dot(x.T, ds)
+
+  dprev_h = np.dot(ds, Wh.T)
+  dWh = np.dot(prev_h.T, ds)
+
+  db = np.sum(ds, axis=0)
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
@@ -417,4 +428,3 @@ def temporal_softmax_loss(x, y, mask, verbose=False):
   dx = dx_flat.reshape(N, T, V)
 
   return loss, dx
-
