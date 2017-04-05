@@ -32,9 +32,8 @@ def rnn_step_forward(x, prev_h, Wx, Wh, b):
   # hidden state and any values you need for the backward pass in the next_h   #
   # and cache variables respectively.                                          #
   ##############################################################################
-  s = np.dot(x, Wx) + np.dot(prev_h, Wh) + b
-  next_h = np.tanh(s)
-  cache = (prev_h, x, Wh, Wx, b, next_h)
+  next_h = np.tanh(np.dot(x, Wx) + np.dot(prev_h, Wh) + b)
+  cache = (prev_h, x, Wh, Wx, next_h)
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
@@ -56,15 +55,14 @@ def rnn_step_backward(dnext_h, cache):
   - dWh: Gradients of hidden-to-hidden weights, of shape (H, H)
   - db: Gradients of bias vector, of shape (H,)
   """
-  prev_h, x, Wh, Wx, b, next_h = cache
+  prev_h, x, Wh, Wx, next_h = cache
   ##############################################################################
   # TODO: Implement the backward pass for a single step of a vanilla RNN.      #
   #                                                                            #
   # HINT: For the tanh function, you can compute the local derivative in terms #
   # of the output value from tanh.                                             #
   ##############################################################################
-  dtanh = 1.0 - next_h ** 2
-  ds = dnext_h * dtanh
+  ds = dnext_h * (1.0 - next_h ** 2)
 
   dx = np.dot(ds, Wx.T)
   dWx = np.dot(x.T, ds)
@@ -181,7 +179,9 @@ def word_embedding_forward(x, W):
   #                                                                            #
   # HINT: This should be very simple.                                          #
   ##############################################################################
-  pass
+  # out = np.dot(x, W)
+  out = W[x]
+  cache = (x, W.shape)
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
@@ -203,13 +203,14 @@ def word_embedding_backward(dout, cache):
   Returns:
   - dW: Gradient of word embedding matrix, of shape (V, D).
   """
-  dW = None
+  x, W_shape = cache
   ##############################################################################
   # TODO: Implement the backward pass for word embeddings.                     #
   #                                                                            #
   # HINT: Look up the function np.add.at                                       #
   ##############################################################################
-  pass
+  dW = np.zeros(W_shape)
+  np.add.at(dW, x, dout)
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
