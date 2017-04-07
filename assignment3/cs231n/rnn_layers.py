@@ -256,9 +256,8 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
   # TODO: Implement the forward pass for a single timestep of an LSTM.        #
   # You may want to use the numerically stable sigmoid implementation above.  #
   #############################################################################
-  a = np.dot(x, Wx) + np.dot(prev_h, Wh) + b
-  ai, af, ao, ag = np.split(a, 4, axis=1)
-  i, f, o, g = sigmoid(ai), sigmoid(af), sigmoid(ao), np.tanh(ag)
+  a = np.hsplit(np.dot(x, Wx) + np.dot(prev_h, Wh) + b, 4)
+  i, f, o, g = sigmoid(a[0]), sigmoid(a[1]), sigmoid(a[2]), np.tanh(a[3])
 
   next_c = f * prev_c + i * g
   next_h = o * np.tanh(next_c)
@@ -295,7 +294,30 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
   # HINT: For sigmoid and tanh you can compute local derivatives in terms of  #
   # the output value from the nonlinearity.                                   #
   #############################################################################
-  pass
+  x, prev_h, prev_c, Wx, Wh, b, next_h, next_c, a, i, f, o, g = cache
+  do = np.tanh(next_c) * dnext_h
+  dnext_c += o * (1.0 - np.tanh(next_c) ** 2) * dnext_h
+
+  df = prev_c * dnext_c
+  dprev_c = f * dnext_c
+  di = g * dnext_c
+  dg = i * dnext_c
+
+  dai, daf, dao = (
+    (sigmoid(ap) * (1.0 - sigmoid(ap))) * dp
+    for ap, dp in zip(a[:3], [di, df, do])
+  )
+  dag = (1.0 - np.tanh(a[3]) ** 2) * dg
+
+  da = np.hstack((dai, daf, dao, dag))
+
+  dx  = np.dot(da, Wx.T)
+  dWx = np.dot(da.T, x).T
+  dprev_h = np.dot(da, Wh.T)
+  dWh     = np.dot(da.T, prev_h).T
+
+  db = np.sum(da, axis=0)
+
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
