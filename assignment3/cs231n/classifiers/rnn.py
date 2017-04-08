@@ -141,12 +141,11 @@ class CaptioningRNN(object):
     if self.cell_type == "rnn":
       rnn_out, rnn_cache = rnn_forward(we_out, h0, Wx, Wh, b)
     elif self.cell_type == "lstm":
-      pass
+      rnn_out, rnn_cache = lstm_forward(we_out, h0, Wx, Wh, b)
     else:
       raise ValueError("self.cell_type must be in {'rnn', 'lstm'}")
 
     ta_out, ta_cache = temporal_affine_forward(rnn_out, W_vocab, b_vocab)
-
 
     loss, dta = temporal_softmax_loss(ta_out, captions_out, mask)
 
@@ -155,7 +154,7 @@ class CaptioningRNN(object):
     if self.cell_type == "rnn":
       dwe, dh0, dWx, dWh, db = rnn_backward(drnn, rnn_cache)
     elif self.cell_type == "lstm":
-      pass
+      dwe, dh0, dWx, dWh, db = lstm_backward(drnn, rnn_cache)
     else:
       raise ValueError("self.cell_type must be in {'rnn', 'lstm'}")
 
@@ -232,9 +231,20 @@ class CaptioningRNN(object):
     # a loop.                                                                 #
     ###########################################################################
     x, h = self._start, np.dot(features, W_proj) + b_proj
+
+    if self.cell_type == "lstm":
+      c = np.zeros_like(h)
+
     for t in xrange(max_length):
       embedded_x = W_embed[x]
-      h = np.tanh(np.dot(embedded_x, Wx) + np.dot(h, Wh) + b)
+
+      if self.cell_type == "rnn":
+        h, _ = rnn_step_forward(embedded_x, h, Wx, Wh, b)
+      elif self.cell_type == "lstm":
+        h, c, _ = lstm_step_forward(embedded_x, h, c, Wx, Wh, b)
+      else:
+        raise ValueError("self.cell_type must be in {'rnn', 'lstm'}")
+
       scores = np.dot(h, W_vocab) + b_vocab
 
       x = np.argmax(scores, axis=1)

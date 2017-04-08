@@ -110,7 +110,7 @@ def rnn_forward(x, h0, Wx, Wh, b):
     cache[t] = cache_t
 
     prev_h = next_h
-  cache.append((x, h0, Wx, Wh, b))
+  cache.append((N, T, H, D))
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
@@ -131,17 +131,19 @@ def rnn_backward(dh, cache):
   - dWh: Gradient of hidden-to-hidden weights, of shape (H, H)
   - db: Gradient of biases, of shape (H,)
   """
-  x, h0, Wx, Wh, db = cache[-1]
-  dx, dh0, dWx, dWh, db = (
-    np.zeros_like(param) for param in [x, h0, Wx, Wh, db]
-  )
-  N, T, D = x.shape
   ##############################################################################
   # TODO: Implement the backward pass for a vanilla RNN running an entire      #
   # sequence of data. You should use the rnn_step_backward function that you   #
   # defined above.                                                             #
   ##############################################################################
-  dnext_h = np.zeros_like(h0)
+  N, T, H, D = cache[-1]
+  dx = np.zeros((N, T, D))
+  dh0 = np.zeros((N, H))
+  dWx = np.zeros((D, H))
+  dWh = np.zeros((H, H))
+  db = np.zeros((H,))
+
+  dnext_h = np.zeros_like(dh0)
   for t in reversed(xrange(T)):
     dx_t, dprev_h, dWx_t, dWh_t, db_t = rnn_step_backward(
       dh[:,t,:] + dnext_h, cache[t]
@@ -352,7 +354,22 @@ def lstm_forward(x, h0, Wx, Wh, b):
   # TODO: Implement the forward pass for an LSTM over an entire timeseries.   #
   # You should use the lstm_step_forward function that you just defined.      #
   #############################################################################
-  pass
+  N, T, D = x.shape
+  H = h0.shape[1]
+
+  h, cache = np.zeros((N, T, H)), [None] * T
+
+  prev_h = h0
+  prev_c = np.zeros_like(h0)
+  for t in xrange(T):
+    x_t = x[:,t,:]
+    next_h, next_c, cache_t = lstm_step_forward(x_t, prev_h, prev_c, Wx, Wh, b)
+    cache[t] = cache_t
+    h[:,t,:] = next_h
+
+    prev_h, prev_c = next_h, next_c
+
+  cache.append((N, T, H, D))
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
@@ -380,7 +397,30 @@ def lstm_backward(dh, cache):
   # TODO: Implement the backward pass for an LSTM over an entire timeseries.  #
   # You should use the lstm_step_backward function that you just defined.     #
   #############################################################################
-  pass
+  N, T, H, D = cache[-1]
+  dx = np.zeros((N, T, D))
+  dh0 = np.zeros((N, H))
+  dWx = np.zeros((D, 4*H))
+  dWh = np.zeros((H, 4*H))
+  db = np.zeros((4*H,))
+
+  dnext_h = np.zeros_like(dh0)
+  dnext_c = np.zeros_like(dh0)
+  for t in reversed(xrange(T)):
+    dx_t, dprev_h, dprev_c, dWx_t, dWh_t, db_t = lstm_step_backward(
+      dh[:,t,:] + dnext_h,
+      dnext_c,
+      cache[t]
+    )
+
+    dx[:,t,:] += dx_t
+    dWx += dWx_t
+    dWh += dWh_t
+    db  += db_t
+    dnext_h = dprev_h
+    dnext_c = dprev_c
+
+  dh0 = dnext_h
   ##############################################################################
   #                               END OF YOUR CODE                             #
   ##############################################################################
