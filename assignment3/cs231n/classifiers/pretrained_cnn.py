@@ -249,4 +249,3 @@ class PretrainedCNN(object):
     loss, dscores = softmax_loss(scores, y)
     dX, grads = self.backward(dscores, cache)
     return loss, grads
-

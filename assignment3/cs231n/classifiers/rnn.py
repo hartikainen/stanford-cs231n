@@ -3,7 +3,6 @@ import numpy as np
 from cs231n.layers import *
 from cs231n.rnn_layers import *
 
-
 class CaptioningRNN(object):
   """
   A CaptioningRNN produces captions from image features using a recurrent
